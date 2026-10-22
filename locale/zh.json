@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "dsh-ref-folder",
+    "description": "会话级只读参考目录：模型可以读取，但不能写入。"
+  }
+}

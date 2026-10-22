@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "dsh-ref-folder",
+    "description": "Session-scoped read-only folders the model can read but never write."
+  }
+}

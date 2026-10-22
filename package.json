@@ -1,0 +1,61 @@
+{
+  "name": "dsh-ref-folder",
+  "version": "0.3.0",
+  "type": "module",
+  "description": "Read-only referenced folders for DeepSeek Harness sessions.",
+  "license": "MIT",
+  "author": {
+    "name": "zhangletian5555",
+    "url": "https://github.com/zhangletian5555"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhangletian5555/dsh-ref-folder.git"
+  },
+  "homepage": "https://github.com/zhangletian5555/dsh-ref-folder#readme",
+  "bugs": {
+    "url": "https://github.com/zhangletian5555/dsh-ref-folder/issues"
+  },
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "plugin",
+    "read-only",
+    "reference-folders"
+  ],
+  "engines": {
+    "dsh": "^0.2.1-rc.2"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "src/*.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-api-workspace-controller",
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-workspace"
+      ]
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
