@@ -28,7 +28,7 @@ plugin_manager install_bundle
 
 ```text
 plugin_manager install_bundle
-  target: github:zhangletian5555/dsh-ref-folder
+  target: github:zhangletian5555/dsh-ref-folders
 ```
 
 ### 本地开发
