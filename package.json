@@ -10,11 +10,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/zhangletian5555/dsh-ref-folders.git"
+    "url": "git+https://github.com/zhangletian5555/dsh-ref-folder.git"
   },
-  "homepage": "https://github.com/zhangletian5555/dsh-ref-folders#readme",
+  "homepage": "https://github.com/zhangletian5555/dsh-ref-folder#readme",
   "bugs": {
-    "url": "https://github.com/zhangletian5555/dsh-ref-folders/issues"
+    "url": "https://github.com/zhangletian5555/dsh-ref-folder/issues"
   },
   "keywords": [
     "dsh",

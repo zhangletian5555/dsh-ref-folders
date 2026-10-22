@@ -10,7 +10,7 @@
    npm view dsh-ref-folder version
    ```
    如果已被占用，改成 scope 包名，例如 `@your-name/dsh-ref-folder`，并同步更新 README 安装命令。
-3. **GitHub 仓库地址**：已按 `https://github.com/zhangletian5555/dsh-ref-folders` 填好 `repository` / `homepage` / `bugs`；如果实际仓库名不同，改这三处和 README 的安装命令。
+3. **GitHub 仓库地址**：已按 `https://github.com/zhangletian5555/dsh-ref-folder` 填好 `repository` / `homepage` / `bugs`；如果实际仓库名不同，改这三处和 README 的安装命令。
 
 ## 1. 发布前检查
 
@@ -82,7 +82,7 @@ plugin_manager
 ```text
 plugin_manager
   action: install_bundle
-  target: github:zhangletian5555/dsh-ref-folders
+  target: github:zhangletian5555/dsh-ref-folder
 ```
 
 管理器会先做 `git ls-remote` 检查，再交给 pnpm。仓库不需要构建；客户端是纯 JS。
