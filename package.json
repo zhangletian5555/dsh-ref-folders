@@ -57,5 +57,12 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check index.js && node --check client.js && node --check src/core.js && node --check src/service.js && node --check src/commands.js && node --check src/http.js"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "4.0.1"
   }
 }

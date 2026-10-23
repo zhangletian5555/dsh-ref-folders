@@ -3,7 +3,7 @@ window.__ModuleLoader__.load({
   factory(require) {
     const React = require("react");
     const h = React.createElement;
-    const { useEffect, useState } = React;
+    const { useEffect, useRef, useState } = React;
 
     function FolderIcon({ size = 14 }) {
       return h("svg", {
@@ -97,6 +97,24 @@ window.__ModuleLoader__.load({
       background: "var(--dsw-alias-bg-layer-1)",
       boxShadow: "0 16px 48px rgba(0, 0, 0, 0.28)",
       color: "var(--dsw-alias-label-primary)",
+      fontFamily: "inherit"
+    };
+
+    /**
+     * A modal <dialog> uses the browser top layer, so the panel cannot be
+     * clipped by an ancestor with transform/overflow. The native modal also
+     * supplies Esc handling, focus containment, and inert background content.
+     */
+    const dialogStyle = {
+      ...backdropStyle,
+      width: "100vw",
+      height: "100vh",
+      maxWidth: "none",
+      maxHeight: "none",
+      margin: 0,
+      border: "none",
+      boxSizing: "border-box",
+      color: "inherit",
       fontFamily: "inherit"
     };
 
@@ -202,6 +220,7 @@ window.__ModuleLoader__.load({
     }
 
     function slugAlias(name) {
+      // Keep this in sync with src/core.js; test/slug-vectors.js is shared.
       let value = String(name ?? "")
         .normalize("NFKD")
         .toLowerCase()
@@ -317,6 +336,9 @@ window.__ModuleLoader__.load({
       const [editing, setEditing] = useState(null);
       const [preview, setPreview] = useState("");
       const [busy, setBusy] = useState(false);
+      const triggerRef = useRef(null);
+      const dialogRef = useRef(null);
+      const wasOpen = useRef(false);
 
       const call = (action, payload = {}) => post({ sessionId, action, ...payload });
 
@@ -333,6 +355,25 @@ window.__ModuleLoader__.load({
         setOpen(false);
         resetForm();
       };
+
+      useEffect(() => {
+        if (!open) {
+          if (wasOpen.current) {
+            wasOpen.current = false;
+            triggerRef.current?.focus();
+          }
+          return;
+        }
+        wasOpen.current = true;
+        const dialog = dialogRef.current;
+        if (dialog !== null && !dialog.open) {
+          if (typeof dialog.showModal === "function") dialog.showModal();
+          else dialog.setAttribute("open", "");
+        }
+        return () => {
+          if (dialog?.open) dialog.close();
+        };
+      }, [open]);
 
       const load = async () => {
         setStatus("loading");
@@ -465,6 +506,7 @@ window.__ModuleLoader__.load({
 
       return h(React.Fragment, null,
         h("button", {
+          ref: triggerRef,
           type: "button",
           title: "引用目录",
           onClick: () => {
@@ -483,18 +525,33 @@ window.__ModuleLoader__.load({
         h("span", { style: { display: "inline-flex", color: "var(--dsw-alias-label-caption)" } }, h(ChevronIcon))),
 
         open
-          ? h("div", {
-              style: backdropStyle,
+          ? h("dialog", {
+              ref: dialogRef,
+              style: dialogStyle,
+              "aria-label": "只读参考目录",
+              onCancel: (event) => {
+                event.preventDefault();
+                closePanel();
+              },
+              onKeyDown: (event) => {
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  closePanel();
+                }
+              },
+              onClose: () => {
+                if (open) {
+                  setOpen(false);
+                  resetForm();
+                }
+              },
               onMouseDown: (event) => {
                 if (event.target === event.currentTarget) closePanel();
               }
             },
             h("div", {
-              role: "dialog",
-              "aria-modal": "true",
-              "aria-label": "只读参考目录",
               style: panelStyle,
-              onClick: (event) => event.stopPropagation()
+              onMouseDown: (event) => event.stopPropagation()
             },
             h("div", { style: { display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 14 } },
               h("div", null,

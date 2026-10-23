@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import path from "node:path";
-import { RefFolders } from "../src/service.js";
+import { RefFolders, apply } from "../src/service.js";
 
 const WORKSPACE = "C:\\ws";
 const DIRS = new Set(["C:\\ws", "C:\\ws\\sub", "C:\\ref", "C:\\ref\\child", "C:\\other"]);
@@ -52,6 +52,15 @@ function makeCtx() {
     tools: {
       guard: (guard) => { captured.guard = guard; return () => {}; }
     },
+    webServer: {
+      getOrigin: () => "http://127.0.0.1:3000",
+      register: (route) => { captured.route = route; return () => {}; }
+    },
+    agents: { get: () => undefined },
+    provide: (name, value) => {
+      captured.provided = { name, value };
+      return () => {};
+    },
     effect: (factory) => factory(),
     inject: (names, callback) => {
       if (!names.includes("commands")) return;
@@ -72,7 +81,7 @@ const agent = { session: { id: "s1", header: { cwd: WORKSPACE } } };
 test("service add/list/duplicate/remove/update and context/guard", async () => {
   const { ctx, captured } = makeCtx();
   const service = new RefFolders(ctx);
-  await service._ready;
+  await service.activate();
 
   const first = await service.add(agent, { path: "C:\\ref", alias: "specs" });
   assert.equal(first.alias, "specs");
@@ -82,6 +91,17 @@ test("service add/list/duplicate/remove/update and context/guard", async () => {
   const duplicate = await service.add(agent, { path: "C:\\ref", description: "hello" });
   assert.equal(duplicate.id, first.id);
   assert.equal(service.list(agent)[0].description, "hello");
+
+  const sameAlias = await service.add(agent, { path: "C:\\ref", alias: "specs" });
+  assert.equal(sameAlias.id, first.id);
+  await assert.rejects(
+    () => service.add(agent, { path: "C:\\ref", alias: "BAD" }),
+    /alias must match/
+  );
+  await assert.rejects(
+    () => service.add(agent, { path: "C:\\ref", alias: "other" }),
+    /already referenced as/
+  );
 
   await assert.rejects(() => service.add(agent, { path: "C:\\ref\\child", alias: "child" }), /overlaps/);
   await assert.rejects(() => service.add(agent, { path: "C:\\ws\\sub", alias: "inside" }), /overlaps the session workspace/);
@@ -107,7 +127,7 @@ test("service add/list/duplicate/remove/update and context/guard", async () => {
 test("service rejects aliases that cannot be derived and preserves other sessions", async () => {
   const { ctx } = makeCtx();
   const service = new RefFolders(ctx);
-  await service._ready;
+  await service.activate();
 
   await assert.rejects(
     () => service.add(agent, { path: "C:\\ref", alias: "" }),
@@ -117,4 +137,26 @@ test("service rejects aliases that cannot be derived and preserves other session
   await service.add(other, { path: "C:\\ref", alias: "refs" });
   assert.equal(service.list(agent).length, 0);
   assert.equal(service.list(other).length, 1);
+});
+
+test("apply waits for storage, exposes one service, and returns nothing", async () => {
+  const { ctx, captured } = makeCtx();
+  let release;
+  const gate = new Promise((resolve) => { release = resolve; });
+  const open = ctx.storageDomain.open;
+  ctx.storageDomain.open = async () => {
+    await gate;
+    return open();
+  };
+
+  const pending = apply(ctx);
+  await Promise.resolve();
+  assert.equal(captured.provided, undefined);
+
+  release();
+  const result = await pending;
+  assert.equal(result, undefined);
+  assert.equal(captured.provided.name, "refFolders");
+  assert.ok(captured.provided.value instanceof RefFolders);
+  assert.equal(captured.route.path, "/ref-folder-api");
 });

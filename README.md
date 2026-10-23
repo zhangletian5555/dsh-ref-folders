@@ -17,7 +17,7 @@
 
 ## 安装
 
-### 从 npm（发布后）
+### 从 npm
 
 ```text
 plugin_manager install_bundle
@@ -67,7 +67,7 @@ composer 工具行会出现 **引用目录**，位置在权限按钮右侧（DSH
 ```
 
 - 别名留空时按目录名生成；生成不了会要求显式填写。
-- 同一 canonical 路径重复添加不会产生第二条，只更新描述。
+- 同一 canonical 路径重复添加不会产生第二条，只更新描述；如果显式给了不同别名，会拒绝并要求先移除再改名。
 - 与当前 workspace 重叠、或与已有引用嵌套的目录会被拒绝。
 
 ## 只读边界
@@ -95,8 +95,12 @@ UI 的读写走本地同源 `POST /ref-folder-api`；它没有额外认证，只
 ## 开发
 
 ```powershell
-node --test test/core.test.js test/service.test.js
+npm install
+npm test
+npm run check
 ```
+
+测试覆盖 `core`、`service`、HTTP 桥、`/ref` 四个子命令、真实 Cordis 加载（含启动等待）以及客户端 slug 一致性；CI 在 Windows 上跑同一套。
 
 - `src/core.js`：纯函数（alias、兜底、渲染、包含判断）
 - `src/service.js`：存储、context、guard、命令装配

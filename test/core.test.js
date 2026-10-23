@@ -9,6 +9,7 @@ import {
   slugAlias,
   splitArgs
 } from "../src/core.js";
+import { SLUG_VECTORS } from "./slug-vectors.js";
 
 test("fallback matches whole alias tokens, not substrings", () => {
   assert.match(fallbackDescription("api-specs"), /契约\/文档/);
@@ -20,11 +21,9 @@ test("fallback matches whole alias tokens, not substrings", () => {
 });
 
 test("slugAlias produces the documented grammar or an empty string", () => {
-  assert.equal(slugAlias("My Specs"), "my-specs");
-  assert.equal(slugAlias("API Docs"), "api-docs");
-  assert.equal(slugAlias("123"), "123");
-  assert.equal(slugAlias("中文目录"), "");
-  assert.equal(slugAlias("..."), "");
+  for (const [input, expected] of SLUG_VECTORS) {
+    assert.equal(slugAlias(input), expected, `slugAlias(${JSON.stringify(input)})`);
+  }
 });
 
 test("normalizeDescription flattens newlines and bounds length", () => {

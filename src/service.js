@@ -72,19 +72,29 @@ export class RefFolders {
     this._domain = undefined;
     this._folders = new Map();
     this._chains = new Map();
+    this._started = false;
     this._ready = this._load();
     this._ready.catch((error) => {
       ctx.logger.error(`ref-folders: cannot open storage: ${error instanceof Error ? error.message : String(error)}`);
     });
 
-    this._registerPrompt();
-    this._registerGuard();
-    registerRefCommands(this, ctx);
-
     ctx.effect(() => async () => {
       await this._ready.catch(() => {});
       if (this._domain !== undefined) await this._domain.close().catch(() => {});
     });
+  }
+
+  /**
+   * Wait for storage, then expose every contribution. Registering only after
+   * the load closes the window where the UI or /ref sees an empty list.
+   */
+  async activate() {
+    await this._ready;
+    if (this._started) return;
+    this._started = true;
+    this._registerPrompt();
+    this._registerGuard();
+    registerRefCommands(this, this.ctx);
   }
 
   async _load() {
@@ -170,6 +180,7 @@ export class RefFolders {
     return this._serial(sessionId, async () => {
       const requestedPath = String(input.path ?? "").trim();
       if (requestedPath.length === 0) throw new Error("path must not be empty");
+      const requestedAlias = input.alias === undefined ? undefined : normalizeAlias(input.alias);
 
       const target = await this.ctx.fs.resolve(requestedPath, {
         cwd: this.ctx.workingDirectory.get(agent.session),
@@ -192,6 +203,9 @@ export class RefFolders {
       for (const folder of existing) {
         const folderTarget = await this.ctx.fs.resolve(folder.path, { signal });
         if (folderTarget.targetKey === target.targetKey) {
+          if (requestedAlias !== undefined && requestedAlias !== folder.alias) {
+            throw new Error(`path is already referenced as [${folder.alias}]; remove it first to change the alias`);
+          }
           if (input.description === undefined) return toView(folder);
           const description = normalizeDescription(input.description);
           const next = existing.map((entry) => entry.id === folder.id
@@ -205,9 +219,7 @@ export class RefFolders {
         }
       }
 
-      const alias = input.alias === undefined
-        ? slugAlias(path.basename(canonical))
-        : normalizeAlias(input.alias);
+      const alias = requestedAlias ?? slugAlias(path.basename(canonical));
       if (alias.length === 0) {
         throw new Error("cannot derive a valid alias from the folder name; provide an alias");
       }
@@ -296,9 +308,9 @@ export class RefFolders {
 }
 
 /** Function-plugin entry: own the service in this plugin's fiber. */
-export function apply(ctx) {
+export async function apply(ctx) {
   const service = new RefFolders(ctx);
+  await service.activate();
   ctx.provide("refFolders", service);
   registerRefFolderHttp(ctx, service);
-  return service;
 }

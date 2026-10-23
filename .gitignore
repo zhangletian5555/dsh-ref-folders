@@ -1,0 +1,4 @@
+node_modules/
+.git.broken-*/
+*.tgz
+.DS_Store
